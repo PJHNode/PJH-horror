@@ -3,6 +3,8 @@ const LAST_NIGHT = 5;
 const SAVE_KEY = 'pjh-horror-night';
 const MUSIC_HOUR = 3;
 const MUSIC_SRC = 'assets/audio/music.m4a';
+const SCARE_SOUNDS = ['assets/audio/jump1.mp3', 'assets/audio/jump2.mp3'];
+const SCARE_SOUND_MAX_MS = 4000;
 
 const $ = id => document.getElementById(id);
 
@@ -109,6 +111,7 @@ function figureClass(id) {
 
 function startNight() {
   Sound.init();
+  Sound.stopScare();
   state = {
     time: 0,
     hour: 0,
@@ -390,7 +393,7 @@ async function jumpscare(who, message) {
   ui.jumpscareImg.src = scareImages[who] || await Placeholder.resolve(who);
   show('jumpscare-overlay');
   ui.jumpscare.classList.add('active');
-  Sound.scream();
+  Sound.playScare(SCARE_SOUNDS, SCARE_SOUND_MAX_MS);
   setTimeout(() => {
     ui.jumpscare.classList.remove('active');
     $('gameover-text').textContent = `NIGHT ${night} · ${message}`;
@@ -550,4 +553,5 @@ ui.jumpscareImg.addEventListener('load', () => {
 ui.camStatic.style.backgroundImage = `url(${Placeholder.staticTexture()})`;
 buildMap();
 preloadScares();
+Sound.preloadClips(SCARE_SOUNDS);
 loadArt();

@@ -397,6 +397,37 @@ const Sound = (() => {
     });
   }
 
+  const clips = {};
+  let scareClip = null;
+  let scareTimer = null;
+
+  function preloadClips(srcs) {
+    srcs.forEach(src => {
+      if (clips[src]) return;
+      const a = new Audio(src);
+      a.preload = 'auto';
+      clips[src] = a;
+    });
+  }
+
+  // Plays one of the clips at random, cut off after maxMs; falls back to the synthesized scream.
+  function playScare(srcs, maxMs) {
+    stopScare();
+    preloadClips(srcs);
+    const a = clips[srcs[Math.floor(Math.random() * srcs.length)]];
+    scareClip = a;
+    a.currentTime = 0;
+    a.volume = 1;
+    a.play().catch(() => { if (scareClip === a) scream(); });
+    scareTimer = setTimeout(stopScare, maxMs);
+  }
+
+  function stopScare() {
+    clearTimeout(scareTimer);
+    if (scareClip) scareClip.pause();
+    scareClip = null;
+  }
+
   let track = null;
   let trackFade = null;
 
@@ -445,6 +476,6 @@ const Sound = (() => {
     init, startAmbient, stopAmbient, setTension, setHeartbeat,
     startCamStatic, stopCamStatic, staticBurst, click, doorSlam, denied,
     footsteps, breathing, scrape, whisper, knock, scream, powerDown, musicBox, chime,
-    startTrack, stopTrack, stopAll,
+    startTrack, stopTrack, preloadClips, playScare, stopScare, stopAll,
   };
 })();
