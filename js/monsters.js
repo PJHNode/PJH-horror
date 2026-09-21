@@ -1,10 +1,11 @@
+// crop: how the shared assets/rooms/room.* photo is framed when a camera has no photo of its own.
 const CAMERAS = [
-  { id: 'lobby',   label: 'CAM 1 · 로비',        cls: 'room-lobby' },
-  { id: 'corrA',   label: 'CAM 2A · 서쪽 복도',  cls: 'room-corrA' },
-  { id: 'corrB',   label: 'CAM 2B · 동쪽 복도',  cls: 'room-corrB' },
-  { id: 'west',    label: 'CAM 3 · 서쪽 대기실', cls: 'room-west' },
-  { id: 'east',    label: 'CAM 4 · 동쪽 대기실', cls: 'room-east' },
-  { id: 'storage', label: 'CAM 5 · 창고',        cls: 'room-storage' },
+  { id: 'lobby',   label: 'CAM 1 · 로비',        cls: 'room-lobby',   crop: { size: 'cover', pos: '50% 50%' } },
+  { id: 'corrA',   label: 'CAM 2A · 서쪽 복도',  cls: 'room-corrA',   crop: { size: '260%', pos: '12% 45%' } },
+  { id: 'corrB',   label: 'CAM 2B · 동쪽 복도',  cls: 'room-corrB',   crop: { size: '260%', pos: '90% 45%' } },
+  { id: 'west',    label: 'CAM 3 · 서쪽 대기실', cls: 'room-west',    crop: { size: '170%', pos: '20% 80%', flip: true } },
+  { id: 'east',    label: 'CAM 4 · 동쪽 대기실', cls: 'room-east',    crop: { size: '170%', pos: '85% 85%' } },
+  { id: 'storage', label: 'CAM 5 · 창고',        cls: 'room-storage', crop: { size: '230%', pos: '58% 40%', flip: true } },
   { id: 'ventcam', label: 'CAM 6 · 환기 덕트',   cls: 'room-vent' },
 ];
 

@@ -78,6 +78,7 @@ async function loadArt() {
   await Promise.all([
     ...MONSTER_DEFS.map(async m => { monsterImages[m.id] = await Placeholder.find('monsters', m.id); }),
     ...CAMERAS.map(async c => { roomImages[c.id] = await Placeholder.find('rooms', c.id); }),
+    Placeholder.find('rooms', 'room').then(url => { roomImages.shared = url; }),
     Placeholder.find('rooms', 'office').then(url => {
       if (url) $('office-bg').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url("${url}")`;
     }),
@@ -432,6 +433,18 @@ function render() {
   if (state.monitorUp) renderCamera();
 }
 
+function roomHtml(cam) {
+  const own = roomImages[cam.id];
+  const shared = !own && cam.crop && roomImages.shared;
+  if (!own && !shared) return `<div class="room ${cam.cls}"></div>`;
+  let style = `background-image:url('${own || shared}')`;
+  if (shared) {
+    style += `;background-size:${cam.crop.size};background-position:${cam.crop.pos}`;
+    if (cam.crop.flip) style += ';transform:scaleX(-1)';
+  }
+  return `<div class="room room-photo" style="${style}"></div>`;
+}
+
 function renderCamera() {
   const cam = CAMERAS.find(c => c.id === state.cam);
   ui.camLabel.textContent = cam.label;
@@ -441,8 +454,7 @@ function renderCamera() {
   const key = cam.id + '|' + here.map(m => `${m.id}${m.pos}`).join(',');
   if (ui.camFeed.dataset.key !== key) {
     ui.camFeed.dataset.key = key;
-    const roomBg = roomImages[cam.id] ? ` style="background-image:url('${roomImages[cam.id]}')"` : '';
-    ui.camFeed.innerHTML = `<div class="room ${roomImages[cam.id] ? 'room-photo' : cam.cls}"${roomBg}></div>` + here.map(m => {
+    ui.camFeed.innerHTML = roomHtml(cam) + here.map(m => {
       if (monsterImages[m.id]) {
         const h = (m.id === 'crawler' ? 35 : 62) * m.camScale;
         return `<img class="cam-monster-img" src="${monsterImages[m.id]}" style="left:${m.camX + m.camOffset}%;height:${h}%">`;
@@ -517,6 +529,10 @@ document.addEventListener('keydown', e => {
   else if (/^[1-7]$/.test(k)) switchCam(CAMERAS[+k - 1].id);
 });
 
+ui.jumpscareImg.addEventListener('load', () => {
+  const img = ui.jumpscareImg;
+  img.classList.toggle('portrait', img.naturalHeight > img.naturalWidth * 1.1);
+});
 ui.camStatic.style.backgroundImage = `url(${Placeholder.staticTexture()})`;
 buildCameraTabs();
 preloadScares();

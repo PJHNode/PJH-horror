@@ -417,6 +417,7 @@ button:disabled { opacity: .25; cursor: not-allowed; }
   width: 100vw; height: 100vh;
   object-fit: cover;
 }
+#jumpscare-img.portrait { object-fit: contain; }
 #jumpscare-overlay.active #jumpscare-img {
   animation: scare .9s ease-out forwards, violentShake .06s infinite;
 }
