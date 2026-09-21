@@ -23,8 +23,10 @@ CCTV로 건물을 감시하며 아침 6시까지 버티는 브라우저 공포 �
 - **속삭이는 여자**: 로비 → 동쪽 복도 → 동쪽 대기실 → **오른쪽 문**으로 옵니다. 카메라로 봐도 멈추지 않습니다.
 - **기어오는 것** (2일째 밤부터): 창고 → 환기 덕트 → **환기구**로 옵니다. 환기구에 손전등을 비춰 쫓아내야 합니다.
 
-문 앞에 온 괴물은 불을 켜야만 보입니다. 발소리, 속삭임, 긁는 소리가 어느 쪽에서 들리는지 잘 들으세요. 헤드폰을 꼭 쓰세요.
+문 앞에 온 괴물은 불을 켜야만 보입니다. 괴물이 다가온다는 경고는 없습니다. 가끔 들리는 발소리나 속삭임도 진짜일 수도, 아닐 수도 있습니다.
 
-## 점프스케어 사진 바꾸기
+## 이미지 바꾸기
 
-[assets/jumpscares/README.md](assets/jumpscares/README.md)를 보세요.
+- 점프스케어: [assets/jumpscares/](assets/jumpscares/README.md)
+- 카메라에 보이는 괴물 모습: [assets/monsters/](assets/monsters/README.md)
+- 방 배경 사진: [assets/rooms/](assets/rooms/README.md)

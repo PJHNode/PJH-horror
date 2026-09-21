@@ -106,24 +106,25 @@ const Placeholder = (() => {
     return c.toDataURL('image/jpeg', 0.85);
   }
 
-  // Tries assets/jumpscares/<name>.{png,jpg,jpeg,webp,gif}; resolves to the generated face if none exist.
-  function resolve(name) {
-    if (cache[name]) return Promise.resolve(cache[name]);
-    const exts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+  // Resolves to the first existing assets/<folder>/<name>.<ext>, or null.
+  function find(folder, name) {
+    const exts = ['png', 'webp', 'jpg', 'jpeg', 'gif'];
     return new Promise(res => {
       const tryNext = i => {
-        if (i >= exts.length) {
-          cache[name] = face(name);
-          return res(cache[name]);
-        }
-        const url = `assets/jumpscares/${name}.${exts[i]}`;
+        if (i >= exts.length) return res(null);
+        const url = `assets/${folder}/${name}.${exts[i]}`;
         const img = new Image();
-        img.onload = () => { cache[name] = url; res(url); };
+        img.onload = () => res(url);
         img.onerror = () => tryNext(i + 1);
         img.src = url;
       };
       tryNext(0);
     });
+  }
+
+  async function resolve(name) {
+    if (!cache[name]) cache[name] = (await find('jumpscares', name)) || face(name);
+    return cache[name];
   }
 
   function staticTexture() {
@@ -140,5 +141,5 @@ const Placeholder = (() => {
     return c.toDataURL();
   }
 
-  return { resolve, staticTexture };
+  return { find, resolve, staticTexture };
 })();

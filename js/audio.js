@@ -281,6 +281,27 @@ const Sound = (() => {
     }
   }
 
+  function knock(pan = 0) {
+    if (!ctx) return;
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = pan;
+    const g = ctx.createGain();
+    g.gain.value = 0.45;
+    panner.connect(g).connect(master);
+    [0, 0.28, 0.56].forEach(off => {
+      const t = ctx.currentTime + off;
+      const osc = ctx.createOscillator();
+      const og = ctx.createGain();
+      osc.frequency.setValueAtTime(160, t);
+      osc.frequency.exponentialRampToValueAtTime(60, t + 0.08);
+      og.gain.setValueAtTime(0.8, t);
+      og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(og).connect(panner);
+      osc.start(t);
+      osc.stop(t + 0.15);
+    });
+  }
+
   function scream() {
     if (!ctx) return;
     const t = ctx.currentTime;
@@ -385,6 +406,6 @@ const Sound = (() => {
   return {
     init, startAmbient, stopAmbient, setTension, setHeartbeat,
     startCamStatic, stopCamStatic, staticBurst, click, doorSlam, denied,
-    footsteps, breathing, scrape, whisper, scream, powerDown, musicBox, chime, stopAll,
+    footsteps, breathing, scrape, whisper, knock, scream, powerDown, musicBox, chime, stopAll,
   };
 })();

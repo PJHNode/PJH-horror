@@ -71,6 +71,29 @@ async function preloadScares() {
   Object.values(scareImages).forEach(src => { new Image().src = src; });
 }
 
+const monsterImages = {};
+const roomImages = {};
+
+async function loadArt() {
+  await Promise.all([
+    ...MONSTER_DEFS.map(async m => { monsterImages[m.id] = await Placeholder.find('monsters', m.id); }),
+    ...CAMERAS.map(async c => { roomImages[c.id] = await Placeholder.find('rooms', c.id); }),
+    Placeholder.find('rooms', 'office').then(url => {
+      if (url) $('office-bg').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url("${url}")`;
+    }),
+  ]);
+  for (const side of ['left', 'right', 'vent']) {
+    const def = MONSTER_DEFS.find(m => m.entry === side);
+    const url = monsterImages[def.id];
+    if (url) ui.figures[side].style.backgroundImage = `url("${url}")`;
+  }
+  if (ui.camFeed) ui.camFeed.dataset.key = '';
+}
+
+function figureClass(id) {
+  return `m-${id}` + (monsterImages[id] ? ' has-img' : '');
+}
+
 function startNight() {
   Sound.init();
   state = {
@@ -91,7 +114,7 @@ function startNight() {
   };
   monsters = createMonsters(night);
 
-  document.body.classList.remove('low-power', 'danger', 'shake', 'flicker');
+  document.body.classList.remove('low-power', 'shake', 'flicker');
   ui.officeDark.classList.add('hidden');
   ui.darkEyes.classList.add('hidden');
   ui.powerWarning.classList.add('hidden');
@@ -122,13 +145,7 @@ function toggleLight(side) {
   state.lights = { left: false, right: false, vent: false };
   state.lights[side] = on;
   Sound.click();
-  if (on) {
-    const m = monsterAt(side);
-    if (m && !m.revealed) {
-      m.revealed = true;
-      Sound.staticBurst(0.3, 0.6);
-    }
-  }
+  if (on && !monsterAt(side) && Math.random() < 0.04 + night * 0.01) fakeGlimpse(side);
   render();
 }
 
@@ -189,12 +206,13 @@ function moveMonster(m) {
     m.atDoor = true;
     m.doorTime = 0;
     m.blockTime = 0;
-    m.revealed = false;
     m.attackAt = rand(...m.attackDelay) - (night - 1) * 0.4;
-    if (m.entry === 'vent') Sound.scrape(0);
-    else if (m.id === 'whisper') Sound.whisper(PAN[m.entry]);
-    else Sound.footsteps(PAN[m.entry], 4);
-  } else if (Math.random() < 0.35) {
+    if (Math.random() < 0.4) {
+      if (m.entry === 'vent') Sound.scrape(0);
+      else if (m.id === 'whisper') Sound.whisper(PAN[m.entry]);
+      else Sound.footsteps(PAN[m.entry], 4);
+    }
+  } else if (Math.random() < 0.15) {
     Sound.footsteps(PAN[m.entry] * 0.4, 2);
   }
 }
@@ -203,9 +221,6 @@ function retreat(m) {
   m.atDoor = false;
   m.pos = Math.random() < 0.5 ? 0 : 1;
   m.moveTimer = m.moveEvery * 2;
-  m.revealed = false;
-  if (m.entry === 'vent') Sound.scrape(0);
-  else Sound.footsteps(PAN[m.entry] * 0.5, 3);
 }
 
 function updateMonsters(dt) {
@@ -299,24 +314,32 @@ function updateTime(dt) {
 
 /* ---------------- ambience & random scares ---------------- */
 
-function updateTension() {
+// Atmosphere deliberately ignores monster positions so it can't be read as a warning.
+function updateAmbience() {
   if (state.blackout) return;
-  let danger = 0;
-  for (const m of monsters) {
-    if (m.level <= 0) continue;
-    danger = Math.max(danger, m.atDoor ? 1 : m.pos / (m.path.length - 1) * 0.7);
-  }
-  if (state.power < 15) danger = Math.max(danger, 0.6);
-  Sound.setTension(danger);
-  Sound.setHeartbeat(danger >= 1 ? 130 : danger >= 0.6 ? 90 : 0);
-  document.body.classList.toggle('danger', danger >= 1);
+  Sound.setTension(Math.min(state.time / (HOUR_SECONDS * 6), 1) * 0.7);
   document.body.classList.toggle('low-power', state.power < 20);
+}
+
+function fakeGlimpse(side) {
+  const fig = ui.figures[side];
+  const id = side === 'vent' ? 'crawler' : side === 'left' ? 'shadow' : 'whisper';
+  setTimeout(() => {
+    if (!state.running || !state.lights[side]) return;
+    fig.className = `peek-figure show glimpse ${figureClass(id)}`;
+    setTimeout(() => { if (state.running) render(); }, 70);
+  }, rand(150, 600));
 }
 
 function randomEvent() {
   const roll = Math.random();
   const images = Object.values(scareImages);
-  if (state.monitorUp && roll < 0.35 && images.length) {
+  if (roll < 0.12) {
+    Sound.setHeartbeat(rand(70, 110));
+    setTimeout(() => { if (state.running && !state.blackout) Sound.setHeartbeat(0); }, rand(5000, 9000));
+  } else if (roll < 0.2) {
+    Sound.knock(rand(-1, 1));
+  } else if (state.monitorUp && roll < 0.45 && images.length) {
     const pick = images[Math.floor(Math.random() * images.length)];
     ui.hallucination.style.backgroundImage = `url("${pick}")`;
     ui.hallucination.classList.remove('hidden');
@@ -402,7 +425,7 @@ function render() {
     ui.windows[side].classList.toggle('lit', lit);
     const m = monsterAt(side);
     const fig = ui.figures[side];
-    fig.className = 'peek-figure' + (lit && m ? ` show m-${m.id}` : '');
+    fig.className = 'peek-figure' + (lit && m ? ` show ${figureClass(m.id)}` : '');
   }
 
   ui.monitor.classList.toggle('hidden', !state.monitorUp);
@@ -418,7 +441,12 @@ function renderCamera() {
   const key = cam.id + '|' + here.map(m => `${m.id}${m.pos}`).join(',');
   if (ui.camFeed.dataset.key !== key) {
     ui.camFeed.dataset.key = key;
-    ui.camFeed.innerHTML = `<div class="room ${cam.cls}"></div>` + here.map(m => {
+    const roomBg = roomImages[cam.id] ? ` style="background-image:url('${roomImages[cam.id]}')"` : '';
+    ui.camFeed.innerHTML = `<div class="room ${roomImages[cam.id] ? 'room-photo' : cam.cls}"${roomBg}></div>` + here.map(m => {
+      if (monsterImages[m.id]) {
+        const h = (m.id === 'crawler' ? 35 : 62) * m.camScale;
+        return `<img class="cam-monster-img" src="${monsterImages[m.id]}" style="left:${m.camX + m.camOffset}%;height:${h}%">`;
+      }
       const h = 55 * m.camScale;
       const w = m.id === 'crawler' ? 30 : 18 * m.camScale;
       const style = m.id === 'crawler'
@@ -448,10 +476,10 @@ function loop(now) {
   } else {
     updatePower(dt);
     updateMonsters(dt);
-    updateTension();
+    updateAmbience();
     state.nextEvent -= dt;
     if (state.nextEvent <= 0) {
-      state.nextEvent = rand(25, 50) - night * 3;
+      state.nextEvent = rand(15, 35) - night * 2;
       randomEvent();
     }
   }
@@ -492,3 +520,4 @@ document.addEventListener('keydown', e => {
 ui.camStatic.style.backgroundImage = `url(${Placeholder.staticTexture()})`;
 buildCameraTabs();
 preloadScares();
+loadArt();

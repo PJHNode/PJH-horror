@@ -64,7 +64,6 @@ function createMonsters(night) {
     doorTime: 0,
     blockTime: 0,
     attackAt: 0,
-    revealed: false,
     camOffset: 0,
     camScale: 1,
   }));
