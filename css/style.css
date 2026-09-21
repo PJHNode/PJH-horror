@@ -7,8 +7,8 @@ html, body {
   font-family: "Courier New", "Malgun Gothic", monospace;
   overflow: hidden;
   user-select: none;
-  cursor: crosshair;
 }
+*, *::before, *::after { cursor: crosshair !important; }
 
 .hidden { display: none !important; }
 
@@ -86,6 +86,12 @@ html, body {
 #office {
   position: absolute; inset: 0;
   overflow: hidden;
+}
+/* wider than the screen; game.js slides it so only one door is in view at a time */
+#office-pan {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 150%;
+  will-change: transform;
 }
 
 #office-bg {
@@ -380,12 +386,14 @@ button:disabled { opacity: .25; cursor: not-allowed; }
 @keyframes rollLine { from { background-position: 0 0; } to { background-position: 0 300px; } }
 
 #camera-nosignal {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; z-index: 3;
   display: flex; align-items: center; justify-content: center;
   font-size: 36px; letter-spacing: 8px; color: #ccc;
   background: #000;
 }
+#camera-nosignal span { animation: titleFlicker 1.3s infinite; }
 
+#camera-label, #rec-indicator { z-index: 4; }
 #camera-label {
   position: absolute; top: 12px; left: 16px;
   font-size: 18px; color: #eee; text-shadow: 0 0 4px #000;

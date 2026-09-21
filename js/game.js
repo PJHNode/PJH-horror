@@ -19,6 +19,8 @@ const ui = {
   camStatic: $('camera-static'),
   camLabel: $('camera-label'),
   camMap: $('cam-map'),
+  camNoSignal: $('camera-nosignal'),
+  officePan: $('office-pan'),
   officeDark: $('office-dark'),
   darkEyes: $('dark-eyes'),
   powerWarning: $('power-warning'),
@@ -37,6 +39,12 @@ let state = null;
 let monsters = [];
 let scareImages = {};
 let lastFrame = 0;
+let mouseX = null;
+let panKey = 0;
+
+const PAN_EDGE = 0.22;
+const PAN_SPEED = 1.4;
+const SIDE_VISIBLE = 0.3;
 
 function loadNight() {
   try {
@@ -109,13 +117,21 @@ function figureClass(id) {
   return `m-${id}` + (monsterImages[id] ? ' has-img' : '');
 }
 
+function enterFullscreen() {
+  const el = document.documentElement;
+  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+
 function startNight() {
+  enterFullscreen();
   Sound.init();
   Sound.stopScare();
   state = {
     time: 0,
     hour: 0,
     power: 100,
+    pan: 0.5,
+    camCut: {},
     doors: { left: false, right: false },
     lights: { left: false, right: false, vent: false },
     monitorUp: false,
@@ -148,15 +164,35 @@ function startNight() {
 
 /* ---------------- controls ---------------- */
 
+function canSee(side) {
+  if (side === 'left') return state.pan <= SIDE_VISIBLE;
+  if (side === 'right') return state.pan >= 1 - SIDE_VISIBLE;
+  return true;
+}
+
+function updatePan(dt) {
+  if (state.monitorUp) return;
+  let dir = panKey;
+  if (!dir && mouseX !== null) {
+    if (mouseX < PAN_EDGE) dir = -(0.35 + 0.65 * (PAN_EDGE - mouseX) / PAN_EDGE);
+    else if (mouseX > 1 - PAN_EDGE) dir = 0.35 + 0.65 * (mouseX - (1 - PAN_EDGE)) / PAN_EDGE;
+  }
+  if (!dir) return;
+  state.pan = Math.min(1, Math.max(0, state.pan + dir * PAN_SPEED * dt));
+  for (const side of ['left', 'right']) {
+    if (state.lights[side] && !canSee(side)) state.lights[side] = false;
+  }
+}
+
 function toggleDoor(side) {
-  if (!state || !state.running || state.blackout || state.monitorUp) return;
+  if (!state || !state.running || state.blackout || state.monitorUp || !canSee(side)) return;
   state.doors[side] = !state.doors[side];
   Sound.doorSlam();
   render();
 }
 
 function toggleLight(side) {
-  if (!state || !state.running || state.blackout || state.monitorUp) return;
+  if (!state || !state.running || state.blackout || state.monitorUp || !canSee(side)) return;
   const on = !state.lights[side];
   state.lights = { left: false, right: false, vent: false };
   state.lights[side] = on;
@@ -216,7 +252,9 @@ function moveMonster(m) {
   m.camOffset = rand(-10, 10);
   m.camScale = rand(0.9, 1.25) + m.pos * 0.08;
 
-  if (state.monitorUp && (state.cam === from || state.cam === to)) flashStatic(0.6);
+  const cut = rand(2, 4);
+  cutCam(from, cut);
+  cutCam(to, cut);
 
   if (to === 'DOOR') {
     m.atDoor = true;
@@ -237,19 +275,42 @@ function retreat(m) {
   m.atDoor = false;
   m.pos = Math.random() < 0.5 ? 0 : 1;
   m.moveTimer = m.moveEvery * 2;
+  cutCam(m.path[m.pos], rand(1.5, 3));
+}
+
+// Slips in while the player is looking at the cameras and strikes when they look away.
+function enterOffice(m) {
+  m.atDoor = false;
+  m.inside = true;
+  m.insideTime = 0;
+  m.loweredTime = 0;
+  m.insideLimit = rand(8, 16);
 }
 
 function updateMonsters(dt) {
   for (const m of monsters) {
     if (m.level <= 0) continue;
+    if (m.inside) {
+      m.insideTime += dt;
+      if (!state.monitorUp) m.loweredTime += dt;
+      if (m.loweredTime > 0.2 || m.insideTime > m.insideLimit) {
+        jumpscare(m.id, m.death);
+        return;
+      }
+      continue;
+    }
     if (m.atDoor) {
       m.doorTime += dt;
       if (isBlocked(m)) {
         m.blockTime += dt;
         if (m.blockTime >= m.blockToRetreat) retreat(m);
       } else if (m.doorTime >= m.attackAt) {
-        jumpscare(m.id, m.death);
-        return;
+        if (state.monitorUp) {
+          enterOffice(m);
+        } else {
+          jumpscare(m.id, m.death);
+          return;
+        }
       }
       continue;
     }
@@ -288,7 +349,7 @@ function startBlackout() {
   state.doors = { left: false, right: false };
   state.lights = { left: false, right: false, vent: false };
   state.monitorUp = false;
-  monsters.forEach(m => { m.level = 0; m.atDoor = false; });
+  monsters.forEach(m => { m.level = 0; m.atDoor = false; m.inside = false; });
   setControlsEnabled(false);
   Sound.stopAmbient();
   Sound.stopTrack(1500);
@@ -357,7 +418,9 @@ function randomEvent() {
     setTimeout(() => { if (state.running && !state.blackout) Sound.setHeartbeat(0); }, rand(5000, 9000));
   } else if (roll < 0.2) {
     Sound.knock(rand(-1, 1));
-  } else if (state.monitorUp && roll < 0.45 && images.length) {
+  } else if (roll < 0.3) {
+    cutCam(CAMERAS[Math.floor(Math.random() * CAMERAS.length)].id, rand(2, 4));
+  } else if (state.monitorUp && roll < 0.5 && images.length) {
     const pick = images[Math.floor(Math.random() * images.length)];
     ui.hallucination.style.backgroundImage = `url("${pick}")`;
     ui.hallucination.classList.remove('hidden');
@@ -375,6 +438,12 @@ function randomEvent() {
   } else {
     Sound.breathing(rand(-0.3, 0.3));
   }
+}
+
+function cutCam(id, seconds) {
+  if (!id || id === 'DOOR') return;
+  state.camCut[id] = Math.max(state.camCut[id] || 0, state.time + seconds);
+  if (state.monitorUp && state.cam === id) Sound.staticBurst(0.5, 0.4);
 }
 
 function flashStatic(seconds) {
@@ -432,6 +501,7 @@ function render() {
   ui.powerValue.textContent = Math.ceil(state.power);
   ui.powerDisplay.classList.toggle('low', state.power < 20);
   ui.timeValue.textContent = formatHour(Math.min(state.hour, 5));
+  ui.officePan.style.transform = `translateX(${-state.pan * 100 / 3}%)`;
 
   for (const side of ['left', 'right']) {
     ui.doors[side].classList.toggle('closed', state.doors[side]);
@@ -485,6 +555,7 @@ function renderCamera() {
     }).join('');
   }
 
+  ui.camNoSignal.classList.toggle('hidden', state.time >= (state.camCut[cam.id] || 0));
   const noisy = state.time < state.staticUntil;
   ui.camStatic.classList.toggle('burst', noisy);
   ui.camStatic.style.backgroundPosition = `${Math.random() * 200}px ${Math.random() * 200}px`;
@@ -503,6 +574,7 @@ function loop(now) {
   if (state.blackout) {
     updateBlackout(dt);
   } else {
+    updatePan(dt);
     updatePower(dt);
     updateMonsters(dt);
     updateAmbience();
@@ -544,7 +616,14 @@ document.addEventListener('keydown', e => {
   else if (k === 'e') toggleLight('right');
   else if (k === 'f' || k === 'w') toggleLight('vent');
   else if (/^[1-7]$/.test(k)) switchCam(CAMERAS[+k - 1].id);
+  else if (e.key === 'ArrowLeft') panKey = -1;
+  else if (e.key === 'ArrowRight') panKey = 1;
 });
+document.addEventListener('keyup', e => {
+  if ((e.key === 'ArrowLeft' && panKey < 0) || (e.key === 'ArrowRight' && panKey > 0)) panKey = 0;
+});
+document.addEventListener('mousemove', e => { mouseX = e.clientX / window.innerWidth; });
+document.documentElement.addEventListener('mouseleave', () => { mouseX = null; });
 
 ui.jumpscareImg.addEventListener('load', () => {
   const img = ui.jumpscareImg;

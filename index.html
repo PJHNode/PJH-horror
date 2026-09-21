@@ -16,16 +16,18 @@
     <button id="start-btn" class="menu-btn">근무 시작 (NIGHT 1)</button>
   </div>
   <p class="hint">🎧 헤드폰 착용을 권장합니다 &nbsp;|&nbsp; 조용하고 어두운 곳에서 플레이하세요</p>
-  <p class="hint hint-small">문 / 불 / 환기구 버튼과 카메라를 이용해 밤을 버티세요.</p>
+  <p class="hint hint-small">마우스를 화면 끝으로 움직여 주위를 둘러보고, 문 / 불 / 환기구 버튼과 카메라로 밤을 버티세요.</p>
 </div>
 
 <div id="game-screen" class="screen hidden">
   <div id="office">
-    <div id="office-bg"></div>
     <div id="office-dark" class="hidden"><div id="dark-eyes" class="hidden"></div></div>
     <div id="hallucination" class="hidden"></div>
     <div id="vignette"></div>
     <div id="scanlines"></div>
+
+    <div id="office-pan">
+    <div id="office-bg"></div>
 
     <div id="left-door-area" class="door-area">
       <div class="door-window" id="left-window"><div class="peek-figure" id="left-figure"></div></div>
@@ -50,6 +52,7 @@
       <div class="vent-cover" id="vent-cover"></div>
       <button class="vent-btn" id="vent-btn" title="환기구 확인">🔦</button>
     </div>
+    </div>
 
     <div id="hud">
       <div class="hud-item" id="power-display">⚡ 전력 <span id="power-value">100</span>%</div>
@@ -68,7 +71,7 @@
         <div id="camera-feed"></div>
         <div id="camera-static"></div>
         <div id="camera-noise-lines"></div>
-        <div id="camera-nosignal" class="hidden">신호 없음</div>
+        <div id="camera-nosignal" class="hidden"><span>신호 없음</span></div>
         <div id="camera-label">CAM 1 · 로비</div>
         <div id="rec-indicator">● REC</div>
         <div id="cam-map"></div>

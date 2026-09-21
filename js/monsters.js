@@ -79,6 +79,7 @@ function createMonsters(night) {
     pos: 0,
     moveTimer: Math.random() * def.moveEvery,
     atDoor: false,
+    inside: false,
     doorTime: 0,
     blockTime: 0,
     attackAt: 0,
