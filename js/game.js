@@ -14,7 +14,7 @@ const ui = {
   camFeed: $('camera-feed'),
   camStatic: $('camera-static'),
   camLabel: $('camera-label'),
-  camTabs: $('camera-tabs'),
+  camMap: $('cam-map'),
   officeDark: $('office-dark'),
   darkEyes: $('dark-eyes'),
   powerWarning: $('power-warning'),
@@ -52,15 +52,25 @@ function rand(min, max) { return min + Math.random() * (max - min); }
 
 /* ---------------- setup ---------------- */
 
-function buildCameraTabs() {
-  ui.camTabs.innerHTML = '';
-  CAMERAS.forEach((cam, i) => {
-    const b = document.createElement('button');
-    b.className = 'cam-tab';
-    b.dataset.cam = cam.id;
-    b.textContent = `${i + 1}. ${cam.label.split('· ')[1]}`;
-    b.addEventListener('click', () => switchCam(cam.id));
-    ui.camTabs.appendChild(b);
+function buildMap() {
+  const rect = ([x, y, w, h], cls) => `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+  const buttons = CAMERAS.map(cam => {
+    const [x, y] = cam.btn;
+    return `<g class="map-cam" data-cam="${cam.id}">` +
+      `<rect x="${x}" y="${y}" width="31" height="16" rx="2"/>` +
+      `<text x="${x + 15.5}" y="${y + 11.5}">CAM${cam.short}</text></g>`;
+  }).join('');
+  ui.camMap.innerHTML =
+    `<svg viewBox="0 0 300 215">` +
+    MAP_ROOMS.map(r => rect(r, 'map-room')).join('') +
+    `<path class="map-duct" d="${MAP_DUCT}"/>` +
+    rect(MAP_OFFICE, 'map-room map-office') +
+    `<text class="map-you" x="${MAP_OFFICE[0] + MAP_OFFICE[2] / 2}" y="${MAP_OFFICE[1] + 32}">YOU</text>` +
+    buttons +
+    `</svg>`;
+  ui.camMap.addEventListener('click', e => {
+    const btn = e.target.closest('.map-cam');
+    if (btn) switchCam(btn.dataset.cam);
   });
 }
 
@@ -448,7 +458,7 @@ function roomHtml(cam) {
 function renderCamera() {
   const cam = CAMERAS.find(c => c.id === state.cam);
   ui.camLabel.textContent = cam.label;
-  ui.camTabs.querySelectorAll('.cam-tab').forEach(b => b.classList.toggle('active', b.dataset.cam === cam.id));
+  ui.camMap.querySelectorAll('.map-cam').forEach(b => b.classList.toggle('active', b.dataset.cam === cam.id));
 
   const here = monsters.filter(m => m.level > 0 && !m.atDoor && m.path[m.pos] === cam.id);
   const key = cam.id + '|' + here.map(m => `${m.id}${m.pos}`).join(',');
@@ -534,6 +544,6 @@ ui.jumpscareImg.addEventListener('load', () => {
   img.classList.toggle('portrait', img.naturalHeight > img.naturalWidth * 1.1);
 });
 ui.camStatic.style.backgroundImage = `url(${Placeholder.staticTexture()})`;
-buildCameraTabs();
+buildMap();
 preloadScares();
 loadArt();

@@ -391,21 +391,28 @@ button:disabled { opacity: .25; cursor: not-allowed; }
   font-size: 18px; color: #eee; text-shadow: 0 0 4px #000;
 }
 #rec-indicator {
-  position: absolute; bottom: 12px; right: 16px;
+  position: absolute; bottom: 12px; left: 16px;
   color: #f22; font-size: 16px;
   animation: titleFlicker 1.2s infinite;
 }
 
-#camera-tabs {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px;
+#cam-map {
+  position: absolute; right: 14px; bottom: 12px;
+  width: 34%; min-width: 220px;
+  z-index: 5;
 }
-.cam-tab {
-  background: #111; border: 1px solid #333; color: #999;
-  padding: 10px 6px; font-family: inherit; font-size: 13px;
-  cursor: pointer;
-}
-.cam-tab:hover { border-color: #777; color: #fff; }
-.cam-tab.active { background: #1f3a1f; border-color: #4a4; color: #cfc; }
+#cam-map svg { width: 100%; display: block; overflow: visible; }
+.map-room { fill: rgba(0,0,0,.35); stroke: #d8d8d8; stroke-width: 2.5; }
+.map-office { fill: rgba(255,255,255,.08); }
+.map-duct { fill: none; stroke: #9a9a9a; stroke-width: 2; stroke-dasharray: 4 3; }
+.map-you { fill: #fff; font-size: 13px; font-weight: bold; text-anchor: middle; letter-spacing: 1px; }
+.map-cam { cursor: pointer; }
+.map-cam rect { fill: #2a2a2a; stroke: #bbb; stroke-width: 1.5; transition: fill .1s; }
+.map-cam text { fill: #eee; font-size: 9px; text-anchor: middle; pointer-events: none; font-family: "Courier New", monospace; }
+.map-cam:hover rect { fill: #555; }
+.map-cam.active rect { fill: #8fbf2f; stroke: #e0ff90; animation: camBlink 1s steps(1) infinite; }
+.map-cam.active text { fill: #000; font-weight: bold; }
+@keyframes camBlink { 50% { fill: #4d6b12; } }
 
 /* ---------- Jumpscare ---------- */
 #jumpscare-overlay {
@@ -439,5 +446,6 @@ body.shake #office { animation: shake .12s 5; }
 @media (max-width: 700px) {
   .door-area { width: 22%; height: 55%; }
   #hud { font-size: 14px; }
+  #cam-map { min-width: 0; width: 46%; right: 6px; bottom: 6px; }
   .door-btn, .light-btn, .vent-btn { width: 42px; height: 42px; font-size: 18px; }
 }
