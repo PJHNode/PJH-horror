@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>심야 경비 - PJH Horror</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="start-screen" class="screen">
+  <div class="crt-flicker"></div>
+  <h1 class="title">심야 경비</h1>
+  <p class="subtitle">아침 6시까지 살아남으십시오</p>
+  <div class="start-menu">
+    <button id="start-btn" class="menu-btn">근무 시작 (NIGHT 1)</button>
+  </div>
+  <p class="hint">🎧 헤드폰 착용을 권장합니다 &nbsp;|&nbsp; 조용하고 어두운 곳에서 플레이하세요</p>
+  <p class="hint hint-small">문 / 불 / 환기구 버튼과 카메라를 이용해 밤을 버티세요.</p>
+</div>
+
+<div id="game-screen" class="screen hidden">
+  <div id="office">
+    <div id="office-bg"></div>
+    <div id="office-dark" class="hidden"><div id="dark-eyes" class="hidden"></div></div>
+    <div id="hallucination" class="hidden"></div>
+    <div id="vignette"></div>
+    <div id="scanlines"></div>
+
+    <div id="left-door-area" class="door-area">
+      <div class="door-window" id="left-window"><div class="peek-figure" id="left-figure"></div></div>
+      <div class="door" id="left-door"></div>
+      <div class="door-controls">
+        <button class="door-btn" id="left-door-btn" title="문 여닫기">🚪</button>
+        <button class="light-btn" id="left-light-btn" title="복도 불 켜기">💡</button>
+      </div>
+    </div>
+
+    <div id="right-door-area" class="door-area">
+      <div class="door-window" id="right-window"><div class="peek-figure" id="right-figure"></div></div>
+      <div class="door" id="right-door"></div>
+      <div class="door-controls">
+        <button class="door-btn" id="right-door-btn" title="문 여닫기">🚪</button>
+        <button class="light-btn" id="right-light-btn" title="복도 불 켜기">💡</button>
+      </div>
+    </div>
+
+    <div id="vent-area">
+      <div class="vent-window" id="vent-window"><div class="peek-figure" id="vent-figure"></div></div>
+      <div class="vent-cover" id="vent-cover"></div>
+      <button class="vent-btn" id="vent-btn" title="환기구 확인">🔦</button>
+    </div>
+
+    <div id="hud">
+      <div class="hud-item" id="power-display">⚡ 전력 <span id="power-value">100</span>%</div>
+      <div class="hud-item" id="time-display">🕐 <span id="time-value">12:00 AM</span></div>
+      <div class="hud-item" id="night-display">NIGHT <span id="night-value">1</span></div>
+    </div>
+
+    <div id="power-warning" class="hidden">전력 소진</div>
+
+    <button id="monitor-toggle-btn">📹 카메라 확인 [SPACE]</button>
+  </div>
+
+  <div id="monitor" class="hidden">
+    <div id="monitor-frame">
+      <div id="camera-view">
+        <div id="camera-feed"></div>
+        <div id="camera-static"></div>
+        <div id="camera-noise-lines"></div>
+        <div id="camera-nosignal" class="hidden">신호 없음</div>
+        <div id="camera-label">CAM 1 · 로비</div>
+        <div id="rec-indicator">● REC</div>
+      </div>
+      <div id="camera-tabs"></div>
+      <button id="monitor-close-btn">▼ 카메라 내리기 [SPACE]</button>
+    </div>
+  </div>
+</div>
+
+<div id="jumpscare-overlay" class="screen hidden">
+  <img id="jumpscare-img" src="" alt="">
+</div>
+
+<div id="night-complete-screen" class="screen hidden">
+  <h2 class="fade-title">— 오전 6시 —</h2>
+  <p id="night-complete-text">당신은 살아남았습니다.</p>
+  <button id="next-night-btn" class="menu-btn">다음 날 밤으로</button>
+</div>
+
+<div id="game-over-screen" class="screen hidden">
+  <h2 class="gameover-title">사 망</h2>
+  <p id="gameover-text"></p>
+  <button id="retry-btn" class="menu-btn">다시 시도</button>
+</div>
+
+<div id="win-screen" class="screen hidden">
+  <h2 class="title">생 존</h2>
+  <p>당신은 5일 밤을 모두 버텨냈습니다.<br>이제 여기는 안전... 할까요?</p>
+  <button id="restart-btn" class="menu-btn">처음부터</button>
+</div>
+
+<script src="js/audio.js"></script>
+<script src="js/placeholder.js"></script>
+<script src="js/monsters.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
