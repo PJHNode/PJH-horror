@@ -281,14 +281,14 @@ const Sound = (() => {
     }
   }
 
-  function knock(pan = 0) {
+  function knock(pan = 0, count = 3, vol = 0.45, gap = 0.28) {
     if (!ctx) return;
     const panner = ctx.createStereoPanner();
     panner.pan.value = pan;
     const g = ctx.createGain();
-    g.gain.value = 0.45;
+    g.gain.value = vol;
     panner.connect(g).connect(master);
-    [0, 0.28, 0.56].forEach(off => {
+    Array.from({ length: count }, (_, i) => i * gap + Math.random() * 0.05).forEach(off => {
       const t = ctx.currentTime + off;
       const osc = ctx.createOscillator();
       const og = ctx.createGain();

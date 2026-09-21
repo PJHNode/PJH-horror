@@ -183,6 +183,19 @@ body.low-power #office-bg { filter: brightness(.55) saturate(.6); animation: lam
   box-shadow: inset 0 0 30px #000;
 }
 .door.closed { height: 100%; }
+/* small window cut into the door at head height so a lit hallway can still be checked */
+.door {
+  -webkit-mask: linear-gradient(#000 0 0) 50% 12% / 50% 22% no-repeat, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) 50% 12% / 50% 22% no-repeat, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.door::after {
+  content: "";
+  position: absolute; left: 23%; width: 54%; top: 7.5%; height: 26%;
+  border: 6px solid #141414;
+  box-sizing: border-box;
+}
 
 .door-controls {
   position: absolute; bottom: -64px; left: 50%; transform: translateX(-50%);

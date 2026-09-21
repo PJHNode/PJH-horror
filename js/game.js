@@ -261,7 +261,9 @@ function moveMonster(m) {
     m.doorTime = 0;
     m.blockTime = 0;
     m.attackAt = rand(...m.attackDelay) - (night - 1) * 0.4;
-    if (Math.random() < 0.4) {
+    if (m.entry !== 'vent' && state.doors[m.entry]) {
+      Sound.knock(PAN[m.entry], 5, 0.9, 0.22);
+    } else if (Math.random() < 0.4) {
       if (m.entry === 'vent') Sound.scrape(0);
       else if (m.id === 'whisper') Sound.whisper(PAN[m.entry]);
       else Sound.footsteps(PAN[m.entry], 4);
