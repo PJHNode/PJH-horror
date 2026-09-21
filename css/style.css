@@ -214,13 +214,15 @@ button:disabled { opacity: .25; cursor: not-allowed; }
   border: 3px solid #222;
   overflow: hidden;
 }
-.vent-window.lit { background: radial-gradient(circle, #33311f 0%, #0a0905 90%); }
+.vent-window.lit { background: radial-gradient(circle, #5a563a 0%, #1a1810 90%); }
 .vent-cover {
   position: absolute; inset: 0; z-index: 2;
   background: repeating-linear-gradient(90deg, #262626 0 6px, #0d0d0d 6px 12px);
   opacity: .92;
   pointer-events: none;
+  transition: opacity .1s;
 }
+.vent-window.lit + .vent-cover { opacity: .45; }
 .vent-btn { position: absolute; bottom: -60px; left: 50%; transform: translateX(-50%); }
 .vent-btn:hover { transform: translateX(-50%) scale(1.08); }
 
