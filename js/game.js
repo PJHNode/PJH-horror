@@ -1,6 +1,8 @@
 const HOUR_SECONDS = 60;
 const LAST_NIGHT = 5;
 const SAVE_KEY = 'pjh-horror-night';
+const MUSIC_HOUR = 3;
+const MUSIC_SRC = 'assets/audio/music.m4a';
 
 const $ = id => document.getElementById(id);
 
@@ -286,6 +288,7 @@ function startBlackout() {
   monsters.forEach(m => { m.level = 0; m.atDoor = false; });
   setControlsEnabled(false);
   Sound.stopAmbient();
+  Sound.stopTrack(1500);
   Sound.stopCamStatic();
   Sound.setHeartbeat(0);
   Sound.powerDown();
@@ -319,6 +322,7 @@ function updateTime(dt) {
   if (hour !== state.hour) {
     state.hour = hour;
     if (hour >= 6) { nightComplete(); return; }
+    if (hour === MUSIC_HOUR && !state.blackout) Sound.startTrack(MUSIC_SRC);
     if (hour >= 2 && hour <= 4) monsters.forEach(m => { if (m.level > 0) m.level++; });
   }
 }

@@ -30,3 +30,4 @@ CCTV로 건물을 감시하며 아침 6시까지 버티는 브라우저 공포 �
 - 점프스케어: [assets/jumpscares/](assets/jumpscares/README.md)
 - 카메라에 보이는 괴물 모습: [assets/monsters/](assets/monsters/README.md)
 - 방 배경 사진: [assets/rooms/](assets/rooms/README.md)
+- 새벽 3시부터 나오는 음악: `assets/audio/music.m4a` (시작 시각은 `js/game.js`의 `MUSIC_HOUR`)

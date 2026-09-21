@@ -397,7 +397,45 @@ const Sound = (() => {
     });
   }
 
+  let track = null;
+  let trackFade = null;
+
+  function fadeTrack(target, ms, done) {
+    clearInterval(trackFade);
+    const a = track;
+    const steps = Math.max(1, Math.round(ms / 50));
+    const delta = (target - a.volume) / steps;
+    let i = 0;
+    trackFade = setInterval(() => {
+      i++;
+      a.volume = Math.min(1, Math.max(0, a.volume + delta));
+      if (i >= steps) {
+        clearInterval(trackFade);
+        a.volume = target;
+        if (done) done();
+      }
+    }, 50);
+  }
+
+  function startTrack(src, volume = 0.6, fadeMs = 4000) {
+    if (track) return;
+    track = new Audio(src);
+    track.loop = true;
+    track.volume = 0;
+    track.play().catch(() => {});
+    fadeTrack(volume, fadeMs);
+  }
+
+  function stopTrack(fadeMs = 0) {
+    if (!track) return;
+    const a = track;
+    const end = () => { a.pause(); if (track === a) track = null; };
+    if (fadeMs > 0) fadeTrack(0, fadeMs, end);
+    else { clearInterval(trackFade); end(); }
+  }
+
   function stopAll() {
+    stopTrack();
     stopAmbient();
     stopCamStatic();
     setHeartbeat(0);
@@ -406,6 +444,7 @@ const Sound = (() => {
   return {
     init, startAmbient, stopAmbient, setTension, setHeartbeat,
     startCamStatic, stopCamStatic, staticBurst, click, doorSlam, denied,
-    footsteps, breathing, scrape, whisper, knock, scream, powerDown, musicBox, chime, stopAll,
+    footsteps, breathing, scrape, whisper, knock, scream, powerDown, musicBox, chime,
+    startTrack, stopTrack, stopAll,
   };
 })();
