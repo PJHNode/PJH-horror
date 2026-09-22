@@ -451,13 +451,18 @@ const Sound = (() => {
     }, 50);
   }
 
+  let trackTarget = 0;
+  let trackSilenced = false;
+
   function startTrack(src, volume = 0.6, fadeMs = 4000) {
     if (track) return;
     track = new Audio(src);
     track.loop = true;
     track.volume = 0;
+    trackTarget = volume;
     track.play().catch(() => {});
-    fadeTrack(volume, fadeMs);
+    if (silenceTimer) trackSilenced = true;
+    else fadeTrack(volume, fadeMs);
   }
 
   function stopTrack(fadeMs = 0) {
@@ -501,7 +506,35 @@ const Sound = (() => {
     stareNodes = null;
   }
 
+  let silenceTimer = null;
+
+  function unsilence() {
+    clearTimeout(silenceTimer);
+    silenceTimer = null;
+    if (!ctx) return;
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setValueAtTime(0.8, ctx.currentTime);
+    if (track && trackSilenced) fadeTrack(trackTarget, 600);
+    trackSilenced = false;
+  }
+
+  // Everything goes quiet (synth sounds and the music track) for ms.
+  function silence(ms) {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setTargetAtTime(0, t, 0.05);
+    if (track) {
+      clearInterval(trackFade);
+      track.volume = 0;
+      trackSilenced = true;
+    }
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(unsilence, ms);
+  }
+
   function stopAll() {
+    unsilence();
     stopStare();
     stopTrack();
     stopAmbient();
@@ -513,6 +546,6 @@ const Sound = (() => {
     init, startAmbient, stopAmbient, setTension, setHeartbeat,
     startCamStatic, stopCamStatic, staticBurst, click, doorSlam, denied,
     footsteps, breathing, scrape, whisper, knock, scream, powerDown, musicBox, chime,
-    startTrack, stopTrack, preloadClips, playScare, stopScare, stare, stopStare, stopAll,
+    startTrack, stopTrack, preloadClips, playScare, stopScare, stare, stopStare, silence, stopAll,
   };
 })();

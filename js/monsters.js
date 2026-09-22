@@ -110,6 +110,21 @@ const PORTRAIT = {
   death: '그 얼굴과 눈을 너무 오래 마주쳤다.',
 };
 
+// Harmless changes that appear on a camera nobody is watching and are gone when looked at later.
+// x/y are % of the camera frame, lined up with the user's photo for that room; anything but
+// text is only used when that room has its own photo. assets/rooms/<cam>_alt1..3 photos are added too.
+// Keep things off the bottom-right, where the map covers the feed. tone: 'pale' for dark walls.
+const ANOMALIES = [
+  { cam: 'corrA',   kind: 'eyes',   x: 49.7, y: 32.5, gap: 1.2 },
+  { cam: 'corrB',   kind: 'eyes',   x: 50,   y: 31, gap: 1.4 },
+  { cam: 'corrA',   kind: 'figure', x: 39,   bottom: 19, h: 32 },
+  { cam: 'corrB',   kind: 'figure', x: 28,   bottom: 37, h: 12 },
+  { cam: 'study',   kind: 'peek',   x: 26.5, y: 42 },
+  { cam: 'nursery', kind: 'text',   x: 52,   y: 38, text: '나가', rot: -6, tone: 'pale' },
+  { cam: 'attic',   kind: 'text',   x: 40,   y: 24, text: '뒤를 봐', rot: 4, tone: 'pale' },
+  { cam: 'lobby',   kind: 'text',   x: 42,   y: 44, text: '돌아와', rot: -3 },
+];
+
 const ENTITY_DEATH = '전기가 나간 어둠 속에서, 그것은 줄곧 기다리고 있었다.';
 
 function nightValue(arr, night) {

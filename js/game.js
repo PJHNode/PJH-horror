@@ -21,6 +21,9 @@ const ui = {
   camMap: $('cam-map'),
   camNoSignal: $('camera-nosignal'),
   officePan: $('office-pan'),
+  fakeScare: $('fake-scare'),
+  fakeScareImg: $('fake-scare-img'),
+  timeDisplay: $('time-display'),
   windPanel: $('wind-panel'),
   windFill: $('wind-fill'),
   windBtn: $('wind-btn'),
@@ -99,12 +102,17 @@ async function preloadScares() {
 
 const monsterImages = {};
 const roomImages = {};
+const photoAnomalies = [];
 
 async function loadArt() {
   await Promise.all([
     ...[...MONSTER_DEFS, DOLL, PORTRAIT].map(async m => { monsterImages[m.id] = await Placeholder.find('monsters', m.id); }),
     ...CAMERAS.map(async c => { roomImages[c.id] = await Placeholder.find('rooms', c.id); }),
     Placeholder.find('rooms', 'room').then(url => { roomImages.shared = url; }),
+    ...CAMERAS.flatMap(c => [1, 2, 3].map(async n => {
+      const src = await Placeholder.find('rooms', `${c.id}_alt${n}`);
+      if (src) photoAnomalies.push({ cam: c.id, kind: 'photo', src });
+    })),
     Placeholder.find('rooms', 'office').then(url => {
       if (url) $('office-bg').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url("${url}")`;
     }),
@@ -143,6 +151,10 @@ function startNight() {
     boxTune: null,
     releaseTune: null,
     portrait: { cam: null, until: 0, stare: 0, nextCheck: PORTRAIT.checkEvery },
+    anomalies: [],
+    nextAnomaly: rand(20, 40),
+    fakes: planFakes(),
+    frozenUntil: 0,
     doors: { left: false, right: false },
     lights: { left: false, right: false, vent: false },
     monitorUp: false,
@@ -157,7 +169,8 @@ function startNight() {
   };
   monsters = createMonsters(night);
 
-  document.body.classList.remove('low-power', 'shake', 'flicker');
+  document.body.classList.remove('low-power', 'shake', 'flicker', 'frozen');
+  ui.fakeScare.classList.add('hidden');
   ui.officeDark.classList.add('hidden');
   ui.darkEyes.classList.add('hidden');
   ui.powerWarning.classList.add('hidden');
@@ -528,6 +541,106 @@ function cutCam(id, seconds) {
   if (state.monitorUp && state.cam === id) Sound.staticBurst(0.5, 0.4);
 }
 
+/* ---------------- anomalies ---------------- */
+
+function watching(cam) {
+  return state.monitorUp && state.cam === cam;
+}
+
+function anomalyPool() {
+  return [...ANOMALIES.filter(a => a.kind === 'text' || roomImages[a.cam]), ...photoAnomalies];
+}
+
+function updateAnomalies(dt) {
+  // an expired anomaly lingers while it's on screen, so it's gone the next time the camera is checked
+  state.anomalies = state.anomalies.filter(a => state.time < a.until || watching(a.cam));
+  state.nextAnomaly -= dt;
+  if (state.nextAnomaly > 0) return;
+  state.nextAnomaly = rand(30, 55) - night * 2;
+  if (state.anomalies.length >= 2) return;
+  const pool = anomalyPool().filter(a => !watching(a.cam) && !state.anomalies.some(b => b.cam === a.cam));
+  if (!pool.length) return;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  state.anomalies.push({ ...pick, until: state.time + rand(20, 45) });
+}
+
+function anomalyHtml(a) {
+  if (a.kind === 'eyes') {
+    return `<i class="anom-eye" style="left:${a.x - a.gap / 2}%;top:${a.y}%"></i>` +
+      `<i class="anom-eye" style="left:${a.x + a.gap / 2}%;top:${a.y}%"></i>`;
+  }
+  if (a.kind === 'figure') {
+    return `<div class="anom-figure" style="left:${a.x}%;bottom:${a.bottom}%;height:${a.h}%;width:${a.h * 0.2}%"></div>`;
+  }
+  if (a.kind === 'text') {
+    const tone = a.tone === 'pale' ? ' pale' : '';
+    return `<div class="anom-text${tone}" style="left:${a.x}%;top:${a.y}%;--rot:${a.rot}deg">${a.text}</div>`;
+  }
+  if (a.kind === 'peek') return `<div class="anom-peek" style="left:${a.x}%;top:${a.y}%"></div>`;
+  return '';
+}
+
+/* ---------------- fake-outs ---------------- */
+
+// A few per night; rarer is scarier.
+function planFakes() {
+  const fakes = [{ type: 'silence', at: rand(80, 300) }];
+  if (night >= 2) fakes.push({ type: 'fakescare', at: rand(120, 330) });
+  if (night >= 3) fakes.push({ type: 'silence', at: rand(60, 330) });
+  if (night >= 4 && Math.random() < 0.6) fakes.push({ type: 'rewind', at: rand(350, 356) });
+  if (night >= 5) fakes.push({ type: 'freeze', at: rand(150, 280) });
+  return fakes;
+}
+
+function showFakeScare() {
+  const images = Object.values(scareImages);
+  if (!images.length) return;
+  ui.fakeScareImg.src = images[Math.floor(Math.random() * images.length)];
+  ui.fakeScare.classList.remove('hidden');
+  Sound.staticBurst(0.35, 1);
+  setTimeout(() => ui.fakeScare.classList.add('hidden'), 260);
+}
+
+function runFake(type) {
+  if (type === 'silence') {
+    Sound.silence(3000);
+    setTimeout(() => {
+      if (!state.running || state.blackout) return;
+      const r = Math.random();
+      if (r < 0.4) Sound.knock(rand(-1, 1), 5, 0.9, 0.22);
+      else if (r < 0.7) Sound.breathing(0);
+    }, 3000);
+  } else if (type === 'fakescare') {
+    showFakeScare();
+  } else if (type === 'rewind') {
+    state.time = HOUR_SECONDS * 4 + rand(40, 55);
+    state.hour = 4;
+    Sound.staticBurst(0.6, 0.7);
+    ui.timeDisplay.classList.remove('glitch');
+    void ui.timeDisplay.offsetWidth;
+    ui.timeDisplay.classList.add('glitch');
+    document.body.classList.add('flicker');
+    setTimeout(() => document.body.classList.remove('flicker'), 600);
+  } else if (type === 'freeze') {
+    const ms = 2600;
+    state.frozenUntil = performance.now() + ms;
+    document.body.classList.add('frozen');
+    Sound.silence(ms);
+    setTimeout(() => {
+      document.body.classList.remove('frozen');
+      if (state.running) showFakeScare();
+    }, ms);
+  }
+}
+
+function updateFakes() {
+  for (const f of state.fakes) {
+    if (f.done || state.time < f.at) continue;
+    f.done = true;
+    runFake(f.type);
+  }
+}
+
 function flashStatic(seconds) {
   state.staticUntil = state.time + seconds;
   if (state.monitorUp) Sound.staticBurst(seconds * 0.6, 0.3);
@@ -604,8 +717,8 @@ function render() {
   if (state.monitorUp) renderCamera();
 }
 
-function roomHtml(cam) {
-  const own = roomImages[cam.id];
+function roomHtml(cam, photoOverride) {
+  const own = photoOverride || roomImages[cam.id];
   const shared = !own && cam.crop && roomImages.shared;
   if (!own && !shared) return `<div class="room ${cam.cls}"></div>`;
   let style = `background-image:url('${own || shared}')`;
@@ -639,11 +752,14 @@ function renderCamera() {
   const dollHere = cam.id === DOLL.cam && !state.dollReleased;
   const dollAwake = state.box < DOLL.lowAt;
   const staring = state.portrait.cam === cam.id;
+  const anomalies = state.anomalies.filter(a => a.cam === cam.id);
+  const photo = anomalies.find(a => a.kind === 'photo');
   const key = cam.id + '|' + here.map(m => `${m.id}${m.pos}`).join(',') +
-    `|${dollHere ? 'D' + +dollAwake : ''}|${staring ? 'P' : ''}`;
+    `|${dollHere ? 'D' + +dollAwake : ''}|${staring ? 'P' : ''}|${anomalies.map(a => a.kind + (a.src || a.x)).join(',')}`;
   if (ui.camFeed.dataset.key !== key) {
     ui.camFeed.dataset.key = key;
-    ui.camFeed.innerHTML = roomHtml(cam) + (dollHere ? dollHtml(dollAwake) : '') + (staring ? stareHtml() : '') + here.map(m => {
+    ui.camFeed.innerHTML = roomHtml(cam, photo && photo.src) + anomalies.map(anomalyHtml).join('') +
+      (dollHere ? dollHtml(dollAwake) : '') + (staring ? stareHtml() : '') + here.map(m => {
       if (monsterImages[m.id]) {
         const h = (m.id === 'crawler' ? 35 : 62) * m.camScale;
         return `<img class="cam-monster-img" src="${monsterImages[m.id]}" style="left:${m.camX + m.camOffset}%;height:${h}%">`;
@@ -679,6 +795,10 @@ function loop(now) {
   if (!state || !state.running) return;
   const dt = Math.min((now - lastFrame) / 1000, 0.1);
   lastFrame = now;
+  if (now < state.frozenUntil) {
+    requestAnimationFrame(loop);
+    return;
+  }
 
   updateTime(dt);
   if (!state.running) return;
@@ -691,6 +811,8 @@ function loop(now) {
     updateMonsters(dt);
     if (state.running) updateDoll(dt);
     if (state.running) updatePortrait(dt);
+    if (state.running) updateAnomalies(dt);
+    if (state.running) updateFakes();
     updateAmbience();
     state.nextEvent -= dt;
     if (state.nextEvent <= 0) {
@@ -721,7 +843,7 @@ $('monitor-close-btn').addEventListener('click', toggleMonitor);
 ui.monitor.addEventListener('click', e => { if (e.target === ui.monitor) toggleMonitor(); });
 
 document.addEventListener('keydown', e => {
-  if (e.repeat || !state || !state.running) return;
+  if (e.repeat || !state || !state.running || document.body.classList.contains('frozen')) return;
   const k = e.key.toLowerCase();
   if (k === ' ' || k === 's') { e.preventDefault(); toggleMonitor(); }
   else if (k === 'a') toggleDoor('left');
