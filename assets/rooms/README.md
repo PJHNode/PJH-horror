@@ -12,7 +12,7 @@
 | `nursery.jpg` | CAM 3 아이 방 |
 | `attic.jpg` | CAM 4 다락방 |
 | `corrA.jpg` | CAM 5 초상화 복도 |
-| `corrB.jpg` | CAM 6 하인 복도 |
+| `corrB.jpg` | CAM 6 하얀 복도 |
 | `west.jpg` | CAM 7 응접실 |
 | `east.jpg` | CAM 8 식당 |
 | `storage.jpg` | CAM 9 보일러실 |

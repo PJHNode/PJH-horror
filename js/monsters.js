@@ -1,14 +1,15 @@
 // Setting: the old Baekun family mansion, now a closed memorial museum. The guard's office sits at the back.
 // crop: how the shared assets/rooms/room.* photo is framed when a camera has no photo of its own.
+// bright: brightness for this camera's own photo (dark photos need more so black silhouettes stay visible).
 // btn: position of the camera button on the map (SVG viewBox MAP_VIEWBOX).
 // Camera order = number keys 1-9, 0.
 const CAMERAS = [
   { id: 'lobby',   short: '1',  label: 'CAM 1 · 현관 홀',       cls: 'room-lobby',   btn: [168, 81],  crop: { size: 'cover', pos: '50% 50%' } },
-  { id: 'study',   short: '2',  label: 'CAM 2 · 서재',          cls: 'room-storage', btn: [15, 24],   crop: { size: '210%', pos: '55% 35%' } },
-  { id: 'nursery', short: '3',  label: 'CAM 3 · 아이 방',       cls: 'room-east',    btn: [254, 24],  crop: { size: '220%', pos: '95% 95%', flip: true } },
-  { id: 'attic',   short: '4',  label: 'CAM 4 · 다락방',        cls: 'room-vent',    btn: [134, 12],  crop: { size: '260%', pos: '50% 0%', flip: true } },
-  { id: 'corrA',   short: '5',  label: 'CAM 5 · 초상화 복도',   cls: 'room-corrA',   btn: [42, 137],  crop: { size: '260%', pos: '12% 45%' } },
-  { id: 'corrB',   short: '6',  label: 'CAM 6 · 하인 복도',     cls: 'room-corrB',   btn: [227, 137], crop: { size: '260%', pos: '90% 45%' } },
+  { id: 'study',   short: '2',  label: 'CAM 2 · 서재',          cls: 'room-storage', btn: [15, 24],   bright: 1.5, crop: { size: '210%', pos: '55% 35%' } },
+  { id: 'nursery', short: '3',  label: 'CAM 3 · 아이 방',       cls: 'room-east',    btn: [254, 24],  bright: 1.3, crop: { size: '220%', pos: '95% 95%', flip: true } },
+  { id: 'attic',   short: '4',  label: 'CAM 4 · 다락방',        cls: 'room-vent',    btn: [134, 12],  bright: 1.5, crop: { size: '260%', pos: '50% 0%', flip: true } },
+  { id: 'corrA',   short: '5',  label: 'CAM 5 · 초상화 복도',   cls: 'room-corrA',   btn: [42, 137],  bright: 2, crop: { size: '260%', pos: '12% 45%' } },
+  { id: 'corrB',   short: '6',  label: 'CAM 6 · 하얀 복도',   cls: 'room-corrB',   btn: [227, 137], crop: { size: '260%', pos: '90% 45%' } },
   { id: 'west',    short: '7',  label: 'CAM 7 · 응접실',        cls: 'room-west',    btn: [14, 221],  crop: { size: '170%', pos: '20% 80%', flip: true } },
   { id: 'east',    short: '8',  label: 'CAM 8 · 식당',          cls: 'room-east',    btn: [255, 221], crop: { size: '170%', pos: '85% 85%' } },
   { id: 'storage', short: '9',  label: 'CAM 9 · 보일러실',      cls: 'room-storage', btn: [124, 130], crop: { size: '230%', pos: '58% 40%', flip: true } },
@@ -48,7 +49,7 @@ const MONSTER_DEFS = [
     name: '그림자',
     path: ['study', 'lobby', 'corrA', 'west', 'DOOR'],
     entry: 'left',
-    ai: [3, 6, 9, 12, 15],
+    ai: [3, 4, 6, 8, 11],
     moveEvery: 4,
     attackDelay: [7, 9],
     blockToRetreat: 4,
@@ -61,7 +62,7 @@ const MONSTER_DEFS = [
     name: '속삭이는 여자',
     path: ['nursery', 'lobby', 'corrB', 'east', 'DOOR'],
     entry: 'right',
-    ai: [2, 5, 8, 11, 14],
+    ai: [2, 4, 5, 7, 10],
     moveEvery: 3.6,
     attackDelay: [5, 7],
     blockToRetreat: 5,
@@ -74,7 +75,7 @@ const MONSTER_DEFS = [
     name: '기어오는 것',
     path: ['storage', 'ventcam', 'DOOR'],
     entry: 'vent',
-    ai: [0, 4, 7, 10, 14],
+    ai: [0, 2, 4, 6, 9],
     moveEvery: 6,
     attackDelay: [6, 8],
     blockToRetreat: 2.5,
@@ -90,7 +91,7 @@ const DOLL = {
   id: 'doll',
   name: '다락방 인형',
   cam: 'attic',
-  drain: [0.7, 0.9, 1.1, 1.35, 1.6],   // % per second
+  drain: [0.6, 0.7, 0.85, 1.05, 1.3],  // % per second
   windRate: 28,                        // % per second while winding
   lowAt: 25,                           // below this it stirs and the map warns
   releaseDelay: [10, 16],
@@ -102,10 +103,10 @@ const DOLL = {
 const PORTRAIT = {
   id: 'portrait',
   name: '초상화 속 얼굴',
-  chance: [0, 0.25, 0.35, 0.45, 0.55], // per check
+  chance: [0, 0.12, 0.22, 0.35, 0.5],  // per check
   checkEvery: 9,
   stay: [10, 16],
-  stareLimit: [0, 2.2, 1.9, 1.6, 1.3],
+  stareLimit: [0, 2.6, 2.2, 1.8, 1.4],
   death: '그 얼굴과 눈을 너무 오래 마주쳤다.',
 };
 

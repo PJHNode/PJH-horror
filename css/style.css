@@ -269,8 +269,10 @@ button:disabled { opacity: .25; cursor: not-allowed; }
 
 .room-photo {
   background-size: cover; background-position: center;
-  filter: brightness(.45) contrast(1.3) grayscale(.6) blur(.6px);
+  filter: brightness(.95) contrast(1.2) grayscale(.6) blur(.5px);
 }
+/* the one shared photo is much brighter than the per-room ones */
+.room-photo.shared { filter: brightness(.45) contrast(1.3) grayscale(.6) blur(.6px); }
 .cam-monster-img {
   position: absolute; bottom: 4%;
   transform: translateX(-50%);

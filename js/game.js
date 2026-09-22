@@ -271,7 +271,7 @@ function moveMonster(m) {
     m.atDoor = true;
     m.doorTime = 0;
     m.blockTime = 0;
-    m.attackAt = rand(...m.attackDelay) - (night - 1) * 0.4;
+    m.attackAt = rand(...m.attackDelay) - (night - 1) * 0.25;
     if (m.entry !== 'vent' && state.doors[m.entry]) {
       Sound.knock(PAN[m.entry], 5, 0.9, 0.22);
     } else if (Math.random() < 0.4) {
@@ -414,7 +414,7 @@ function powerUsage() {
 
 function updatePower(dt) {
   if (state.blackout) return;
-  state.power -= powerUsage() * dt * (1 / 9) * (1 + (night - 1) * 0.12);
+  state.power -= powerUsage() * dt * (1 / 9) * (1 + (night - 1) * 0.07);
   if (state.power <= 0) {
     state.power = 0;
     startBlackout();
@@ -469,7 +469,7 @@ function updateTime(dt) {
     state.hour = hour;
     if (hour >= 6) { nightComplete(); return; }
     if (hour === MUSIC_HOUR && !state.blackout) Sound.startTrack(MUSIC_SRC);
-    if (hour >= 2 && hour <= 4) monsters.forEach(m => { if (m.level > 0) m.level++; });
+    if (hour === 2 || hour === 4) monsters.forEach(m => { if (m.level > 0) m.level++; });
   }
 }
 
@@ -609,11 +609,12 @@ function roomHtml(cam) {
   const shared = !own && cam.crop && roomImages.shared;
   if (!own && !shared) return `<div class="room ${cam.cls}"></div>`;
   let style = `background-image:url('${own || shared}')`;
+  if (own && cam.bright) style += `;filter:brightness(${cam.bright}) contrast(1.2) grayscale(.6) blur(.5px)`;
   if (shared) {
     style += `;background-size:${cam.crop.size};background-position:${cam.crop.pos}`;
     if (cam.crop.flip) style += ';transform:scaleX(-1)';
   }
-  return `<div class="room room-photo" style="${style}"></div>`;
+  return `<div class="room room-photo${shared ? ' shared' : ''}" style="${style}"></div>`;
 }
 
 function dollHtml(awake) {
@@ -693,7 +694,7 @@ function loop(now) {
     updateAmbience();
     state.nextEvent -= dt;
     if (state.nextEvent <= 0) {
-      state.nextEvent = rand(15, 35) - night * 2;
+      state.nextEvent = rand(15, 35) - night;
       randomEvent();
     }
   }
