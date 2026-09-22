@@ -21,6 +21,9 @@ const ui = {
   camMap: $('cam-map'),
   camNoSignal: $('camera-nosignal'),
   officePan: $('office-pan'),
+  windPanel: $('wind-panel'),
+  windFill: $('wind-fill'),
+  windBtn: $('wind-btn'),
   officeDark: $('office-dark'),
   darkEyes: $('dark-eyes'),
   powerWarning: $('power-warning'),
@@ -41,6 +44,7 @@ let scareImages = {};
 let lastFrame = 0;
 let mouseX = null;
 let panKey = 0;
+let windHeld = false;
 
 const PAN_EDGE = 0.22;
 const PAN_SPEED = 1.4;
@@ -87,7 +91,7 @@ function buildMap() {
 }
 
 async function preloadScares() {
-  const names = [...MONSTER_DEFS.map(m => m.id), 'entity'];
+  const names = [...MONSTER_DEFS.map(m => m.id), DOLL.id, PORTRAIT.id, 'entity'];
   const urls = await Promise.all(names.map(n => Placeholder.resolve(n)));
   names.forEach((n, i) => { scareImages[n] = urls[i]; });
   Object.values(scareImages).forEach(src => { new Image().src = src; });
@@ -98,7 +102,7 @@ const roomImages = {};
 
 async function loadArt() {
   await Promise.all([
-    ...MONSTER_DEFS.map(async m => { monsterImages[m.id] = await Placeholder.find('monsters', m.id); }),
+    ...[...MONSTER_DEFS, DOLL, PORTRAIT].map(async m => { monsterImages[m.id] = await Placeholder.find('monsters', m.id); }),
     ...CAMERAS.map(async c => { roomImages[c.id] = await Placeholder.find('rooms', c.id); }),
     Placeholder.find('rooms', 'room').then(url => { roomImages.shared = url; }),
     Placeholder.find('rooms', 'office').then(url => {
@@ -132,6 +136,13 @@ function startNight() {
     power: 100,
     pan: 0.5,
     camCut: {},
+    box: 100,
+    windTick: 0,
+    dollReleased: false,
+    releaseAt: 0,
+    boxTune: null,
+    releaseTune: null,
+    portrait: { cam: null, until: 0, stare: 0, nextCheck: PORTRAIT.checkEvery },
     doors: { left: false, right: false },
     lights: { left: false, right: false, vent: false },
     monitorUp: false,
@@ -324,6 +335,72 @@ function updateMonsters(dt) {
   }
 }
 
+function isCut(id) {
+  return state.time < (state.camCut[id] || 0);
+}
+
+function stopDollTunes() {
+  if (state.boxTune) { state.boxTune(); state.boxTune = null; }
+  if (state.releaseTune) { state.releaseTune(); state.releaseTune = null; }
+}
+
+function updateDoll(dt) {
+  if (state.dollReleased) {
+    if (state.time >= state.releaseAt) jumpscare(DOLL.id, DOLL.death);
+    return;
+  }
+  const onAttic = state.monitorUp && state.cam === DOLL.cam && !isCut(DOLL.cam);
+  if (onAttic && windHeld) {
+    state.box = Math.min(100, state.box + DOLL.windRate * dt);
+    state.windTick -= dt;
+    if (state.windTick <= 0) { state.windTick = 0.12; Sound.click(); }
+  } else {
+    state.box -= nightValue(DOLL.drain, night) * dt;
+  }
+
+  if (state.box <= 0) {
+    state.box = 0;
+    state.dollReleased = true;
+    state.releaseAt = state.time + rand(...DOLL.releaseDelay);
+    stopDollTunes();
+    cutCam(DOLL.cam, 2);
+    state.releaseTune = Sound.musicBox(1e9, { vol: 0.28, interval: 300, wobble: 0.14 });
+    return;
+  }
+
+  if (onAttic && !state.boxTune) state.boxTune = Sound.musicBox(1e9, { vol: 0.07 });
+  else if (!onAttic && state.boxTune) { state.boxTune(); state.boxTune = null; }
+}
+
+function updatePortrait(dt) {
+  const p = state.portrait;
+  if (p.cam) {
+    const watching = state.monitorUp && state.cam === p.cam && !isCut(p.cam);
+    if (watching) {
+      p.stare += dt;
+      const limit = nightValue(PORTRAIT.stareLimit, night);
+      Sound.stare(Math.min(p.stare / limit, 1));
+      if (p.stare >= limit) jumpscare(PORTRAIT.id, PORTRAIT.death);
+    } else if (p.stare > 0 || state.time > p.until) {
+      p.nextCheck = PORTRAIT.checkEvery * (p.stare > 0 ? 2 : 1);
+      p.cam = null;
+      p.stare = 0;
+      Sound.stopStare();
+    }
+    return;
+  }
+  const chance = nightValue(PORTRAIT.chance, night);
+  if (!chance) return;
+  p.nextCheck -= dt;
+  if (p.nextCheck > 0) return;
+  p.nextCheck = PORTRAIT.checkEvery;
+  if (Math.random() >= chance) return;
+  // never on the camera being watched, so it's only ever discovered by switching to it
+  const options = CAMERAS.filter(c => c.id !== DOLL.cam && !(state.monitorUp && c.id === state.cam));
+  p.cam = options[Math.floor(Math.random() * options.length)].id;
+  p.until = state.time + rand(...PORTRAIT.stay);
+}
+
 /* ---------------- power / time ---------------- */
 
 function powerUsage() {
@@ -352,6 +429,9 @@ function startBlackout() {
   state.lights = { left: false, right: false, vent: false };
   state.monitorUp = false;
   monsters.forEach(m => { m.level = 0; m.atDoor = false; m.inside = false; });
+  stopDollTunes();
+  state.portrait.cam = null;
+  Sound.stopStare();
   setControlsEnabled(false);
   Sound.stopAmbient();
   Sound.stopTrack(1500);
@@ -459,6 +539,7 @@ async function jumpscare(who, message) {
   if (!state.running) return;
   state.running = false;
   if (state.stopMusic) state.stopMusic();
+  stopDollTunes();
   Sound.stopAll();
   ui.monitor.classList.add('hidden');
   ui.jumpscareImg.src = scareImages[who] || await Placeholder.resolve(who);
@@ -475,6 +556,7 @@ async function jumpscare(who, message) {
 function nightComplete() {
   state.running = false;
   if (state.stopMusic) state.stopMusic();
+  stopDollTunes();
   Sound.stopAll();
   Sound.chime();
   if (night >= LAST_NIGHT) {
@@ -534,16 +616,33 @@ function roomHtml(cam) {
   return `<div class="room room-photo" style="${style}"></div>`;
 }
 
+function dollHtml(awake) {
+  const cls = awake ? ' awake' : '';
+  if (monsterImages[DOLL.id]) {
+    return `<img class="cam-monster-img${cls}" src="${monsterImages[DOLL.id]}" style="left:${DOLL.camX}%;height:34%">`;
+  }
+  return `<div class="cam-monster show m-doll${cls}" style="left:${DOLL.camX}%;bottom:14%;height:30%;width:9%"></div>`;
+}
+
+function stareHtml() {
+  const src = monsterImages[PORTRAIT.id] || scareImages[PORTRAIT.id];
+  return src ? `<img class="cam-stare" src="${src}">` : '';
+}
+
 function renderCamera() {
   const cam = CAMERAS.find(c => c.id === state.cam);
   ui.camLabel.textContent = cam.label;
   ui.camMap.querySelectorAll('.map-cam').forEach(b => b.classList.toggle('active', b.dataset.cam === cam.id));
 
   const here = monsters.filter(m => m.level > 0 && !m.atDoor && m.path[m.pos] === cam.id);
-  const key = cam.id + '|' + here.map(m => `${m.id}${m.pos}`).join(',');
+  const dollHere = cam.id === DOLL.cam && !state.dollReleased;
+  const dollAwake = state.box < DOLL.lowAt;
+  const staring = state.portrait.cam === cam.id;
+  const key = cam.id + '|' + here.map(m => `${m.id}${m.pos}`).join(',') +
+    `|${dollHere ? 'D' + +dollAwake : ''}|${staring ? 'P' : ''}`;
   if (ui.camFeed.dataset.key !== key) {
     ui.camFeed.dataset.key = key;
-    ui.camFeed.innerHTML = roomHtml(cam) + here.map(m => {
+    ui.camFeed.innerHTML = roomHtml(cam) + (dollHere ? dollHtml(dollAwake) : '') + (staring ? stareHtml() : '') + here.map(m => {
       if (monsterImages[m.id]) {
         const h = (m.id === 'crawler' ? 35 : 62) * m.camScale;
         return `<img class="cam-monster-img" src="${monsterImages[m.id]}" style="left:${m.camX + m.camOffset}%;height:${h}%">`;
@@ -557,7 +656,17 @@ function renderCamera() {
     }).join('');
   }
 
-  ui.camNoSignal.classList.toggle('hidden', state.time >= (state.camCut[cam.id] || 0));
+  ui.camNoSignal.classList.toggle('hidden', !isCut(cam.id));
+
+  ui.windPanel.classList.toggle('hidden', !dollHere);
+  if (dollHere) {
+    ui.windFill.style.width = `${state.box}%`;
+    ui.windFill.classList.toggle('low', dollAwake);
+    ui.windBtn.classList.toggle('held', windHeld);
+  }
+  const atticBtn = ui.camMap.querySelector(`.map-cam[data-cam="${DOLL.cam}"]`);
+  atticBtn.classList.toggle('warn', !state.dollReleased && dollAwake);
+
   const noisy = state.time < state.staticUntil;
   ui.camStatic.classList.toggle('burst', noisy);
   ui.camStatic.style.backgroundPosition = `${Math.random() * 200}px ${Math.random() * 200}px`;
@@ -579,6 +688,8 @@ function loop(now) {
     updatePan(dt);
     updatePower(dt);
     updateMonsters(dt);
+    if (state.running) updateDoll(dt);
+    if (state.running) updatePortrait(dt);
     updateAmbience();
     state.nextEvent -= dt;
     if (state.nextEvent <= 0) {
@@ -618,12 +729,18 @@ document.addEventListener('keydown', e => {
   else if (k === 'e') toggleLight('right');
   else if (k === 'f' || k === 'w') toggleLight('vent');
   else if (/^[0-9]$/.test(k) && CAMERAS[(+k + 9) % 10]) switchCam(CAMERAS[(+k + 9) % 10].id);
+  else if (k === 'r') windHeld = true;
   else if (e.key === 'ArrowLeft') panKey = -1;
   else if (e.key === 'ArrowRight') panKey = 1;
 });
 document.addEventListener('keyup', e => {
   if ((e.key === 'ArrowLeft' && panKey < 0) || (e.key === 'ArrowRight' && panKey > 0)) panKey = 0;
+  if (e.key.toLowerCase() === 'r') windHeld = false;
 });
+ui.windBtn.addEventListener('pointerdown', e => { e.preventDefault(); windHeld = true; });
+ui.windBtn.addEventListener('pointerleave', () => { windHeld = false; });
+document.addEventListener('pointerup', () => { windHeld = false; });
+document.addEventListener('pointercancel', () => { windHeld = false; });
 document.addEventListener('mousemove', e => { mouseX = e.clientX / window.innerWidth; });
 document.documentElement.addEventListener('mouseleave', () => { mouseX = null; });
 

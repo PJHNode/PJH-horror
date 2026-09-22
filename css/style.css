@@ -436,6 +436,41 @@ button:disabled { opacity: .25; cursor: not-allowed; }
 .map-cam.active rect { fill: #8fbf2f; stroke: #e0ff90; animation: camBlink 1s steps(1) infinite; }
 .map-cam.active text { fill: #000; font-weight: bold; }
 @keyframes camBlink { 50% { fill: #4d6b12; } }
+.map-cam.warn:not(.active) rect { fill: #a01010; stroke: #ff6060; animation: warnBlink .6s steps(1) infinite; }
+@keyframes warnBlink { 50% { fill: #2a2a2a; stroke: #bbb; } }
+
+#wind-panel {
+  position: absolute; left: 16px; bottom: 40px; z-index: 5;
+  width: 250px;
+  display: flex; flex-direction: column; gap: 6px;
+  background: rgba(0,0,0,.55); padding: 10px; border: 1px solid #444;
+}
+.wind-label { font-size: 13px; color: #ddd; letter-spacing: 2px; }
+.wind-bar { height: 12px; border: 1px solid #aaa; background: #111; }
+#wind-fill { height: 100%; width: 100%; background: #cfcfcf; }
+#wind-fill.low { background: #c21a1a; animation: titleFlicker 1s infinite; }
+#wind-btn {
+  background: #1d1d1d; border: 1px solid #888; color: #eee;
+  padding: 10px 6px; font-family: inherit; font-size: 13px;
+}
+#wind-btn.held { background: #4a4a4a; }
+
+.cam-stare {
+  position: absolute; left: 50%; top: 50%;
+  height: 125%;
+  transform: translate(-50%, -50%);
+  filter: grayscale(.85) brightness(1.15) contrast(1.35) blur(.5px);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, #000 45%, transparent 78%);
+  animation: stareIn 2.5s ease-in forwards;
+  pointer-events: none;
+}
+@keyframes stareIn { from { scale: 1; opacity: .75; } to { scale: 1.18; opacity: 1; } }
+
+.cam-monster.m-doll { background: #111; }
+.cam-monster.m-doll::before, .cam-monster.m-doll::after { background: #ddd; box-shadow: 0 0 6px 2px #999; animation: none; opacity: .35; }
+.cam-monster.m-doll.awake::before, .cam-monster.m-doll.awake::after { background: #ff2a2a; box-shadow: 0 0 10px 3px #f00; opacity: 1; }
+.cam-monster-img.awake { filter: brightness(.7) contrast(1.6) grayscale(.3) blur(1px) drop-shadow(0 0 6px #a00); }
 
 /* ---------- Jumpscare ---------- */
 #jumpscare-overlay {

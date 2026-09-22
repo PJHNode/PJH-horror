@@ -84,12 +84,41 @@ const MONSTER_DEFS = [
   },
 ];
 
+// Lives in the attic. A music box keeps it asleep; wind it from CAM 4. If it runs out the doll
+// is released and nothing can stop it. Per-night arrays are indexed by night - 1.
+const DOLL = {
+  id: 'doll',
+  name: '다락방 인형',
+  cam: 'attic',
+  drain: [0.7, 0.9, 1.1, 1.35, 1.6],   // % per second
+  windRate: 28,                        // % per second while winding
+  lowAt: 25,                           // below this it stirs and the map warns
+  releaseDelay: [10, 16],
+  camX: 58,
+  death: '오르골 소리가 멈췄다. 다락방에는 아무것도 없었다.',
+};
+
+// Shows up on a random camera staring into the lens. Looking at it too long is fatal.
+const PORTRAIT = {
+  id: 'portrait',
+  name: '초상화 속 얼굴',
+  chance: [0, 0.25, 0.35, 0.45, 0.55], // per check
+  checkEvery: 9,
+  stay: [10, 16],
+  stareLimit: [0, 2.2, 1.9, 1.6, 1.3],
+  death: '그 얼굴과 눈을 너무 오래 마주쳤다.',
+};
+
 const ENTITY_DEATH = '전기가 나간 어둠 속에서, 그것은 줄곧 기다리고 있었다.';
+
+function nightValue(arr, night) {
+  return arr[Math.min(night, arr.length) - 1];
+}
 
 function createMonsters(night) {
   return MONSTER_DEFS.map(def => ({
     ...def,
-    level: def.ai[Math.min(night, def.ai.length) - 1],
+    level: nightValue(def.ai, night),
     pos: 0,
     moveTimer: Math.random() * def.moveEvery,
     atDoor: false,

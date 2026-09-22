@@ -359,24 +359,27 @@ const Sound = (() => {
     osc.stop(t + 2.7);
   }
 
-  // an out-of-tune music-box melody that plays during the blackout
-  function musicBox(duration) {
+  // An out-of-tune music-box melody. wobble = random detune per note.
+  function musicBox(duration, { vol = 0.18, interval = 420, wobble = 0.03, pan = 0 } = {}) {
     if (!ctx) return () => {};
     const notes = [659, 587, 523, 494, 523, 440, 392, 440, 494, 523, 494, 440];
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = pan;
+    panner.connect(master);
     let i = 0;
     const timer = setInterval(() => {
       const t = ctx.currentTime;
       const osc = ctx.createOscillator();
       osc.type = 'triangle';
-      osc.frequency.value = notes[i % notes.length] * (1 + (Math.random() - 0.5) * 0.03);
+      osc.frequency.value = notes[i % notes.length] * (1 + (Math.random() - 0.5) * wobble);
       const g = ctx.createGain();
-      g.gain.setValueAtTime(0.18, t);
+      g.gain.setValueAtTime(vol, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-      osc.connect(g).connect(master);
+      osc.connect(g).connect(panner);
       osc.start(t);
       osc.stop(t + 0.65);
       i++;
-    }, 420);
+    }, interval);
     const stopTimer = setTimeout(() => clearInterval(timer), duration);
     return () => { clearInterval(timer); clearTimeout(stopTimer); };
   }
@@ -465,7 +468,41 @@ const Sound = (() => {
     else { clearInterval(trackFade); end(); }
   }
 
+  let stareNodes = null;
+
+  // A ringing whine that climbs as level goes 0 -> 1.
+  function stare(level) {
+    if (!ctx) return;
+    if (!stareNodes) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      osc.connect(g);
+      osc2.connect(g);
+      g.connect(master);
+      osc.start();
+      osc2.start();
+      stareNodes = { osc, osc2, g };
+    }
+    const t = ctx.currentTime;
+    const f = 900 + level * 2600;
+    stareNodes.osc.frequency.setTargetAtTime(f, t, 0.05);
+    stareNodes.osc2.frequency.setTargetAtTime(f * 1.013, t, 0.05);
+    stareNodes.g.gain.setTargetAtTime(0.03 + level * 0.22, t, 0.05);
+  }
+
+  function stopStare() {
+    if (!stareNodes) return;
+    stareNodes.osc.stop();
+    stareNodes.osc2.stop();
+    stareNodes = null;
+  }
+
   function stopAll() {
+    stopStare();
     stopTrack();
     stopAmbient();
     stopCamStatic();
@@ -476,6 +513,6 @@ const Sound = (() => {
     init, startAmbient, stopAmbient, setTension, setHeartbeat,
     startCamStatic, stopCamStatic, staticBurst, click, doorSlam, denied,
     footsteps, breathing, scrape, whisper, knock, scream, powerDown, musicBox, chime,
-    startTrack, stopTrack, preloadClips, playScare, stopScare, stopAll,
+    startTrack, stopTrack, preloadClips, playScare, stopScare, stare, stopStare, stopAll,
   };
 })();
