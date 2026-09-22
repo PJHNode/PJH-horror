@@ -1,30 +1,44 @@
+// Setting: the old Baekun family mansion, now a closed memorial museum. The guard's office sits at the back.
 // crop: how the shared assets/rooms/room.* photo is framed when a camera has no photo of its own.
-// btn: position of the camera button on the map (SVG viewBox 300x215).
+// btn: position of the camera button on the map (SVG viewBox MAP_VIEWBOX).
+// Camera order = number keys 1-9, 0.
 const CAMERAS = [
-  { id: 'lobby',   short: '1',  label: 'CAM 1 · 로비',        cls: 'room-lobby',   btn: [168, 36],  crop: { size: 'cover', pos: '50% 50%' } },
-  { id: 'corrA',   short: '2A', label: 'CAM 2A · 서쪽 복도',  cls: 'room-corrA',   btn: [42, 92],   crop: { size: '260%', pos: '12% 45%' } },
-  { id: 'corrB',   short: '2B', label: 'CAM 2B · 동쪽 복도',  cls: 'room-corrB',   btn: [227, 92],  crop: { size: '260%', pos: '90% 45%' } },
-  { id: 'west',    short: '3',  label: 'CAM 3 · 서쪽 대기실', cls: 'room-west',    btn: [14, 176],  crop: { size: '170%', pos: '20% 80%', flip: true } },
-  { id: 'east',    short: '4',  label: 'CAM 4 · 동쪽 대기실', cls: 'room-east',    btn: [255, 176], crop: { size: '170%', pos: '85% 85%' } },
-  { id: 'storage', short: '5',  label: 'CAM 5 · 창고',        cls: 'room-storage', btn: [148, 86],  crop: { size: '230%', pos: '58% 40%', flip: true } },
-  { id: 'ventcam', short: '6',  label: 'CAM 6 · 환기 덕트',   cls: 'room-vent',    btn: [160, 124] },
+  { id: 'lobby',   short: '1',  label: 'CAM 1 · 현관 홀',       cls: 'room-lobby',   btn: [168, 81],  crop: { size: 'cover', pos: '50% 50%' } },
+  { id: 'study',   short: '2',  label: 'CAM 2 · 서재',          cls: 'room-storage', btn: [15, 24],   crop: { size: '210%', pos: '55% 35%' } },
+  { id: 'nursery', short: '3',  label: 'CAM 3 · 아이 방',       cls: 'room-east',    btn: [254, 24],  crop: { size: '220%', pos: '95% 95%', flip: true } },
+  { id: 'attic',   short: '4',  label: 'CAM 4 · 다락방',        cls: 'room-vent',    btn: [134, 12],  crop: { size: '260%', pos: '50% 0%', flip: true } },
+  { id: 'corrA',   short: '5',  label: 'CAM 5 · 초상화 복도',   cls: 'room-corrA',   btn: [42, 137],  crop: { size: '260%', pos: '12% 45%' } },
+  { id: 'corrB',   short: '6',  label: 'CAM 6 · 하인 복도',     cls: 'room-corrB',   btn: [227, 137], crop: { size: '260%', pos: '90% 45%' } },
+  { id: 'west',    short: '7',  label: 'CAM 7 · 응접실',        cls: 'room-west',    btn: [14, 221],  crop: { size: '170%', pos: '20% 80%', flip: true } },
+  { id: 'east',    short: '8',  label: 'CAM 8 · 식당',          cls: 'room-east',    btn: [255, 221], crop: { size: '170%', pos: '85% 85%' } },
+  { id: 'storage', short: '9',  label: 'CAM 9 · 보일러실',      cls: 'room-storage', btn: [124, 130], crop: { size: '230%', pos: '58% 40%', flip: true } },
+  { id: 'ventcam', short: '10', label: 'CAM 10 · 난방 덕트',    cls: 'room-vent',    btn: [160, 169] },
 ];
 
+const MAP_VIEWBOX = '0 0 300 260';
 const MAP_ROOMS = [
-  [95, 5, 110, 50],    // lobby
-  [40, 35, 35, 110],   // west corridor
-  [225, 35, 35, 110],  // east corridor
-  [75, 35, 20, 18],    // lobby -> west corridor
-  [205, 35, 20, 18],   // lobby -> east corridor
-  [10, 145, 75, 50],   // west waiting room
-  [215, 145, 75, 50],  // east waiting room
-  [120, 70, 60, 35],   // storage
-  [141, 55, 18, 15],   // lobby -> storage
-  [85, 168, 25, 18],   // left door
-  [190, 168, 25, 18],  // right door
+  [125, 5, 50, 30],    // attic
+  [143, 35, 14, 15],   // attic stairs
+  [10, 5, 75, 40],     // study
+  [85, 18, 30, 14],    // study -> hall
+  [101, 32, 14, 18],
+  [215, 5, 75, 40],    // nursery
+  [185, 18, 30, 14],   // nursery -> hall
+  [185, 32, 14, 18],
+  [95, 50, 110, 50],   // entrance hall
+  [40, 80, 35, 110],   // portrait corridor
+  [225, 80, 35, 110],  // servants' corridor
+  [75, 80, 20, 18],    // hall -> portrait corridor
+  [205, 80, 20, 18],   // hall -> servants' corridor
+  [10, 190, 75, 50],   // parlour
+  [215, 190, 75, 50],  // dining room
+  [120, 115, 60, 35],  // boiler room
+  [141, 100, 18, 15],  // hall -> boiler room
+  [85, 213, 25, 18],   // left door
+  [190, 213, 25, 18],  // right door
 ];
-const MAP_OFFICE = [110, 155, 80, 55];
-const MAP_DUCT = 'M150 105 L150 118 L140 132 L150 155';
+const MAP_OFFICE = [110, 200, 80, 55];
+const MAP_DUCT = 'M150 150 L150 163 L140 177 L150 200';
 
 // ai: difficulty per night (index 0 = night 1). Each move tick the monster advances if rand(1..20) <= ai.
 // entry: where it attacks from. freezeWhenWatched: can't move while its camera is on screen.
@@ -32,10 +46,10 @@ const MONSTER_DEFS = [
   {
     id: 'shadow',
     name: '그림자',
-    path: ['lobby', 'corrA', 'west', 'DOOR'],
+    path: ['study', 'lobby', 'corrA', 'west', 'DOOR'],
     entry: 'left',
     ai: [3, 6, 9, 12, 15],
-    moveEvery: 5,
+    moveEvery: 4,
     attackDelay: [7, 9],
     blockToRetreat: 4,
     freezeWhenWatched: true,
@@ -45,10 +59,10 @@ const MONSTER_DEFS = [
   {
     id: 'whisper',
     name: '속삭이는 여자',
-    path: ['lobby', 'corrB', 'east', 'DOOR'],
+    path: ['nursery', 'lobby', 'corrB', 'east', 'DOOR'],
     entry: 'right',
     ai: [2, 5, 8, 11, 14],
-    moveEvery: 4.5,
+    moveEvery: 3.6,
     attackDelay: [5, 7],
     blockToRetreat: 5,
     freezeWhenWatched: false,

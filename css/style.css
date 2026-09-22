@@ -421,7 +421,7 @@ button:disabled { opacity: .25; cursor: not-allowed; }
 
 #cam-map {
   position: absolute; right: 14px; bottom: 12px;
-  width: 34%; min-width: 220px;
+  width: 30%; min-width: 210px;
   z-index: 5;
 }
 #cam-map svg { width: 100%; display: block; overflow: visible; }

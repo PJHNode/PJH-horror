@@ -73,7 +73,7 @@ function buildMap() {
       `<text x="${x + 15.5}" y="${y + 11.5}">CAM${cam.short}</text></g>`;
   }).join('');
   ui.camMap.innerHTML =
-    `<svg viewBox="0 0 300 215">` +
+    `<svg viewBox="${MAP_VIEWBOX}">` +
     MAP_ROOMS.map(r => rect(r, 'map-room')).join('') +
     `<path class="map-duct" d="${MAP_DUCT}"/>` +
     rect(MAP_OFFICE, 'map-room map-office') +
@@ -617,7 +617,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'q') toggleLight('left');
   else if (k === 'e') toggleLight('right');
   else if (k === 'f' || k === 'w') toggleLight('vent');
-  else if (/^[1-7]$/.test(k)) switchCam(CAMERAS[+k - 1].id);
+  else if (/^[0-9]$/.test(k) && CAMERAS[(+k + 9) % 10]) switchCam(CAMERAS[(+k + 9) % 10].id);
   else if (e.key === 'ArrowLeft') panKey = -1;
   else if (e.key === 'ArrowRight') panKey = 1;
 });
